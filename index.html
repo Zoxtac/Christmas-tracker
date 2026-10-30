@@ -306,7 +306,6 @@
 
   <!-- SCRIPT LOGIQUE PRINCIPALE -->
   <script>
-    // --- ÉTAT DE L'APPLICATION ---
     const STORAGE_KEY = 'noel_pwa_data_v2';
     
     let appData = {
@@ -325,7 +324,6 @@
       'Offert': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
     };
 
-    // --- INITIALISATION ET STORAGE ---
     function loadData() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -347,7 +345,6 @@
       }
     }
 
-    // --- DÉCOMPTE NOËL ---
     function updateCountdown() {
       const now = new Date();
       const year = now.getFullYear();
@@ -361,7 +358,6 @@
       else el.textContent = `J-${diff} avant Noël`;
     }
 
-    // --- NAVIGATION PAR ONGLETS ---
     function switchTab(tab) {
       currentTab = tab;
       const btnGifts = document.getElementById('tab-gifts');
@@ -384,7 +380,6 @@
       lucide.createIcons();
     }
 
-    // --- LISTE DES PERSONNES UNIQUES ---
     function getPersonsList() {
       const set = new Set();
       appData.gifts.forEach(g => { if(g.who) set.add(g.who.trim()); });
@@ -397,7 +392,6 @@
       list.innerHTML = getPersonsList().map(p => `<option value="${escapeHtml(p)}">`).join('');
     }
 
-    // --- RENDU VUE CADEAUX ---
     function renderGifts() {
       const container = document.getElementById('gifts-container');
       const filterBar = document.getElementById('person-filter-bar');
@@ -476,7 +470,6 @@
       if (currentTab === 'budget') renderBudget();
     }
 
-    // --- RENDU VUE BUDGET ---
     function renderBudget() {
       const container = document.getElementById('person-budgets-list');
       const persons = getPersonsList();
@@ -550,7 +543,6 @@
       }
     }
 
-    // --- GESTION DE LA MODALE CADEAU ---
     function openGiftModal(id = null) {
       const modal = document.getElementById('modal-gift');
       const sheet = modal.querySelector('.sheet-transition');
@@ -639,7 +631,6 @@
       if (currentTab === 'budget') renderBudget();
     }
 
-    // --- GESTION DE LA MODALE BUDGET ---
     function openPersonBudgetModal() {
       const modal = document.getElementById('modal-budget');
       const sheet = modal.querySelector('.sheet-transition');
@@ -674,7 +665,6 @@
       renderBudget();
     }
 
-    // --- IMPORT / EXPORT JSON ---
     function exportData() {
       const jsonStr = JSON.stringify(appData, null, 2);
       const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -714,7 +704,6 @@
       input.value = '';
     }
 
-    // --- UTILITAIRES ---
     function formatEuro(val) {
       return (Math.round((parseFloat(val) || 0) * 100) / 100).toLocaleString('fr-FR', {
         style: 'currency',
@@ -732,44 +721,15 @@
       return String(str || '').replace(/'/g, "\\'");
     }
 
-    // --- SERVICE WORKER INLINE (PWA Hors-ligne autonome sur GitHub Pages) ---
+    // --- ENREGISTREMENT DU SERVICE WORKER EXTERNE (sw.js) ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        const swCode = `
-          const CACHE_NAME = 'mon-noel-cache-v2';
-          self.addEventListener('install', (e) => {
-            e.waitUntil(
-              caches.open(CACHE_NAME).then((cache) => {
-                return cache.addAll(['./', './icon.png']);
-              })
-            );
-            self.skipWaiting();
-          });
-
-          self.addEventListener('activate', (e) => {
-            e.waitUntil(self.clients.claim());
-          });
-
-          self.addEventListener('fetch', (e) => {
-            e.respondWith(
-              caches.match(e.request).then((res) => {
-                return res || fetch(e.request).then((response) => {
-                  return caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(e.request, response.clone());
-                    return response;
-                  });
-                });
-              }).catch(() => caches.match('./'))
-            );
-          });
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(err => console.log('SW reg error:', err));
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker enregistré !', reg.scope))
+          .catch(err => console.error('Erreur SW:', err));
       });
     }
 
-    // --- INITIALISATION AU CHARGEMENT ---
     window.addEventListener('DOMContentLoaded', () => {
       loadData();
       updateCountdown();
