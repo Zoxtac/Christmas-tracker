@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mes Cadeaux de Noël</title>
+
+  <!-- Configuration PWA iOS / Mobile -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mon Noël">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0d2419">
+
+  <!-- Icône pour iOS (Apple Touch Icon) -->
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          colors: {
+            ios: {
+              bg: '#f2f2f7',
+              card: 'rgba(255, 255, 255, 0.8)',
+              darkBg: '#000000',
+              darkCard: 'rgba(28, 28, 30, 0.8)',
+              green: '#14452f',
+              red: '#d92b38',
+              gold: '#c59b27',
+              muted: '#8e8e93'
+            }
+          },
+          fontFamily: {
+            sf: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Dynamic Web App Manifest Injection -->
+  <script>
+    (function() {
+      const manifest = {
+        name: "Mon Noël - Liste de Cadeaux",
+        short_name: "Mon Noël",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#0d2419",
+        theme_color: "#0d2419",
+        icons: [{
+          src: "icon.png",
+          sizes: "192x192 512x512",
+          type: "image/png"
+        }]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      const manifestUrl = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestUrl;
+      document.head.appendChild(link);
+    })();
+  </script>
+
+  <style>
+    /* Styles iOS Glassmorphism et Adaptabilité */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    @media (prefers-color-scheme: dark) {
+      .glass {
+        background: rgba(28, 28, 30, 0.75);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+    }
+    .glass-modal {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+    }
+    @media (prefers-color-scheme: dark) {
+      .glass-modal {
+        background: rgba(30, 30, 32, 0.90);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+      }
+    }
+    /* Smooth transition pour la modale */
+    .sheet-transition {
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-full pb-32 pt- safe-area-inset">
+
+  <!-- Dynamic Island Header -->
+  <header class="sticky top-0 z-30 pt-2 pb-3 px-4 glass border-b border-gray-200/50 dark:border-gray-800/50">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center text-white shadow-sm text-lg">
+          🎄
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight tracking-tight">Mon Noël</h1>
+          <p id="countdown" class="text-xs text-gray-500 dark:text-gray-400 font-medium"></p>
+        </div>
+      </div>
+
+      <!-- Actions Rapides Header -->
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" title="Exporter" class="p-2 rounded-full bg-gray-200/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:opacity-80 active:scale-95 transition">
+          <i data-lucide="download" class="w-4 h-4"></i>
+        </button>
+        <button onclick="document.getElementById('importFile').click()" title="Importer" class="p-2 rounded-full bg-gray-200/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:opacity-80 active:scale-95 transition">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+        </button>
+        <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(this)">
+      </div>
+    </div>
+
+    <!-- Segmented Control Bar iOS -->
+    <div class="max-w-md mx-auto mt-3 p-1 bg-gray-200/80 dark:bg-gray-800/80 rounded-xl flex text-xs font-semibold">
+      <button id="tab-gifts" onclick="switchTab('gifts')" class="flex-1 py-1.5 rounded-lg transition-all shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white flex items-center justify-center gap-1.5">
+        <i data-lucide="gift" class="w-3.5 h-3.5"></i> Cadeaux
+      </button>
+      <button id="tab-budget" onclick="switchTab('budget')" class="flex-1 py-1.5 rounded-lg transition-all text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1.5">
+        <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i> Budgets
+      </button>
+    </div>
+  </header>
+
+  <!-- Conteneur Principal -->
+  <main class="max-w-md mx-auto px-4 mt-4 space-y-4">
+
+    <!-- Vue CADEAUX -->
+    <section id="view-gifts" class="space-y-4">
+      <!-- Filtre par Personne (Pills Scrollables) -->
+      <div id="person-filter-bar" class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+        <!-- Généré dynamiquement -->
+      </div>
+
+      <!-- Liste des cadeaux -->
+      <div id="gifts-container" class="space-y-3">
+        <!-- Injection JavaScript -->
+      </div>
+    </section>
+
+    <!-- Vue BUDGET -->
+    <section id="view-budget" class="space-y-4 hidden">
+      <!-- Synthèse Globale -->
+      <div class="p-4 rounded-2xl glass border border-gray-200/60 dark:border-gray-800/60 shadow-sm space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Budget Global</span>
+          <span id="global-status-badge" class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Dans les temps</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Total Dépensé</p>
+            <p id="total-spent" class="text-2xl font-bold tracking-tight text-emerald-800 dark:text-emerald-400">0,00 €</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Budget Prévu</p>
+            <p id="total-planned" class="text-2xl font-bold tracking-tight text-gray-800 dark:text-gray-200">0,00 €</p>
+          </div>
+        </div>
+        <!-- Barre de progression globale -->
+        <div class="w-full bg-gray-200 dark:bg-gray-700 h-2.5 rounded-full overflow-hidden">
+          <div id="global-progress-bar" class="bg-emerald-600 h-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Budgets Individuels -->
+      <div class="flex items-center justify-between pt-2">
+        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Budgets par personne</h2>
+        <button onclick="openPersonBudgetModal()" class="text-xs font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Définir un budget
+        </button>
+      </div>
+
+      <div id="person-budgets-list" class="space-y-3">
+        <!-- Injecté par JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bouton Flottant d'Ajout (FAB iOS) -->
+  <div class="fixed bottom-6 left-0 right-0 z-20 flex justify-center pointer-events-none px-4">
+    <button onclick="openGiftModal()" class="pointer-events-auto bg-emerald-800 hover:bg-emerald-900 active:scale-95 text-white shadow-lg rounded-full px-5 py-3.5 flex items-center gap-2 font-semibold text-sm transition-all border border-amber-400/30">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      <span>Nouveau Cadeau</span>
+    </button>
+  </div>
+
+  <!-- Modal Fiche Cadeau (iOS Sheet) -->
+  <div id="modal-gift" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0">
+      <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 sm:hidden"></div>
+      
+      <div class="flex justify-between items-center mb-4">
+        <h3 id="modal-title" class="text-lg font-bold">Ajouter un cadeau</h3>
+        <button onclick="closeGiftModal()" class="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="gift-form" onsubmit="saveGift(event)" class="space-y-3">
+        <input type="hidden" id="gift-id">
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Cadeau</label>
+          <input type="text" id="gift-name" required placeholder="ex: Lego Star Wars" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Pour qui ?</label>
+            <input type="text" id="gift-who" required list="persons-list" placeholder="ex: Sophie" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+            <datalist id="persons-list"></datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Prix (€)</label>
+            <input type="number" id="gift-price" step="0.01" min="0" placeholder="0.00" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Lien du cadeau (URL)</label>
+          <input type="url" id="gift-url" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Statut</label>
+          <select id="gift-status" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+            <option value="À trouver">💡 À trouver</option>
+            <option value="Acheté">🛒 Acheté</option>
+            <option value="Emballé">🎁 Emballé</option>
+            <option value="Offert">🎄 Offert</option>
+          </select>
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" id="btn-delete-gift" onclick="deleteGiftFromModal()" class="hidden px-4 py-3 rounded-xl bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 font-semibold text-sm hover:bg-red-200 transition">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+          <button type="submit" class="flex-1 py-3 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-sm transition shadow-md">
+            Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Définition Budget Personne -->
+  <div id="modal-budget" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">Définir un budget</h3>
+        <button onclick="closeBudgetModal()" class="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="budget-form" onsubmit="savePersonBudget(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Personne</label>
+          <input type="text" id="budget-person-name" required list="persons-list" placeholder="ex: Papa" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Budget Cible (€)</label>
+          <input type="number" id="budget-person-amount" required step="1" min="0" placeholder="100" class="w-full px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 border-0 focus:ring-2 focus:ring-emerald-600 text-sm">
+        </div>
+        <div class="pt-2">
+          <button type="submit" class="w-full py-3 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white font-semibold text-sm transition shadow-md">
+            Enregistrer le budget
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIQUE PRINCIPALE -->
+  <script>
+    // --- ÉTAT DE L'APPLICATION ---
+    const STORAGE_KEY = 'noel_pwa_data_v2';
+    
+    let appData = {
+      gifts: [], 
+      budgets: {} 
+    };
+
+    let currentTab = 'gifts';
+    let selectedPersonFilter = 'ALL';
+
+    const STATUS_FLOW = ['À trouver', 'Acheté', 'Emballé', 'Offert'];
+    const STATUS_STYLES = {
+      'À trouver': 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      'Acheté': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+      'Emballé': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+      'Offert': 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+    };
+
+    // --- INITIALISATION ET STORAGE ---
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          appData = JSON.parse(saved);
+          if (!appData.gifts) appData.gifts = [];
+          if (!appData.budgets) appData.budgets = {};
+        }
+      } catch (e) {
+        console.error("Erreur de chargement LocalStorage:", e);
+      }
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      } catch (e) {
+        alert("Erreur lors de la sauvegarde locale.");
+      }
+    }
+
+    // --- DÉCOMPTE NOËL ---
+    function updateCountdown() {
+      const now = new Date();
+      const year = now.getFullYear();
+      let christmas = new Date(year, 11, 25);
+      if (now > new Date(year, 11, 25, 23, 59, 59)) {
+        christmas = new Date(year + 1, 11, 25);
+      }
+      const diff = Math.ceil((christmas - now) / (1000 * 60 * 60 * 24));
+      const el = document.getElementById('countdown');
+      if (diff === 0) el.textContent = "🎅 C'est aujourd'hui ! Joyeux Noël !";
+      else el.textContent = `J-${diff} avant Noël`;
+    }
+
+    // --- NAVIGATION PAR ONGLETS ---
+    function switchTab(tab) {
+      currentTab = tab;
+      const btnGifts = document.getElementById('tab-gifts');
+      const btnBudget = document.getElementById('tab-budget');
+      const viewGifts = document.getElementById('view-gifts');
+      const viewBudget = document.getElementById('view-budget');
+
+      if (tab === 'gifts') {
+        viewGifts.classList.remove('hidden');
+        viewBudget.classList.add('hidden');
+        btnGifts.className = "flex-1 py-1.5 rounded-lg transition-all shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white flex items-center justify-center gap-1.5";
+        btnBudget.className = "flex-1 py-1.5 rounded-lg transition-all text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1.5";
+      } else {
+        viewGifts.classList.add('hidden');
+        viewBudget.classList.remove('hidden');
+        btnBudget.className = "flex-1 py-1.5 rounded-lg transition-all shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white flex items-center justify-center gap-1.5";
+        btnGifts.className = "flex-1 py-1.5 rounded-lg transition-all text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1.5";
+        renderBudget();
+      }
+      lucide.createIcons();
+    }
+
+    // --- LISTE DES PERSONNES UNIQUES ---
+    function getPersonsList() {
+      const set = new Set();
+      appData.gifts.forEach(g => { if(g.who) set.add(g.who.trim()); });
+      Object.keys(appData.budgets).forEach(p => set.add(p.trim()));
+      return Array.from(set).sort((a,b) => a.localeCompare(b));
+    }
+
+    function updateDatalist() {
+      const list = document.getElementById('persons-list');
+      list.innerHTML = getPersonsList().map(p => `<option value="${escapeHtml(p)}">`).join('');
+    }
+
+    // --- RENDU VUE CADEAUX ---
+    function renderGifts() {
+      const container = document.getElementById('gifts-container');
+      const filterBar = document.getElementById('person-filter-bar');
+      const persons = getPersonsList();
+
+      let filterHTML = `<button onclick="setPersonFilter('ALL')" class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition ${selectedPersonFilter === 'ALL' ? 'bg-emerald-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}">Tous (${appData.gifts.length})</button>`;
+      
+      persons.forEach(p => {
+        const count = appData.gifts.filter(g => g.who.trim().toLowerCase() === p.toLowerCase()).length;
+        const active = selectedPersonFilter.toLowerCase() === p.toLowerCase();
+        filterHTML += `<button onclick="setPersonFilter('${escapeJs(p)}')" class="px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition ${active ? 'bg-emerald-800 text-white' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}">${escapeHtml(p)} (${count})</button>`;
+      });
+      filterBar.innerHTML = filterHTML;
+
+      let filtered = appData.gifts;
+      if (selectedPersonFilter !== 'ALL') {
+        filtered = appData.gifts.filter(g => g.who.trim().toLowerCase() === selectedPersonFilter.toLowerCase());
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 px-4 rounded-2xl glass border border-dashed border-gray-300 dark:border-gray-800">
+            <div class="text-4xl mb-2">🎁</div>
+            <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Aucun cadeau enregistré</p>
+            <p class="text-xs text-gray-400 mt-1">Appuyez sur le bouton "+" pour commencer votre liste.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(g => {
+        const badgeStyle = STATUS_STYLES[g.status] || STATUS_STYLES['À trouver'];
+        const urlFormatted = g.url ? (/^https?:\/\//i.test(g.url) ? g.url : 'https://' + g.url) : null;
+
+        return `
+          <div class="p-3.5 rounded-2xl glass border border-gray-200/60 dark:border-gray-800/60 shadow-sm flex items-center justify-between gap-3 active:scale-[0.99] transition">
+            <div class="flex-1 min-w-0 cursor-pointer" onclick="openGiftModal('${g.id}')">
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm truncate text-gray-900 dark:text-white">${escapeHtml(g.name)}</h4>
+                <span class="text-xs text-gray-400">·</span>
+                <span class="text-xs font-medium text-emerald-800 dark:text-emerald-400 truncate">${escapeHtml(g.who)}</span>
+              </div>
+              <div class="flex items-center gap-3 mt-0.5">
+                <p class="text-xs font-semibold text-gray-500 dark:text-gray-400">${formatEuro(g.price)}</p>
+                ${urlFormatted ? `
+                  <a href="${escapeHtml(urlFormatted)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i> Voir le produit
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+
+            <button onclick="cycleStatus('${g.id}')" class="px-2.5 py-1 rounded-full text-xs font-semibold border transition flex items-center gap-1 ${badgeStyle}">
+              <span>${escapeHtml(g.status)}</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      updateDatalist();
+      lucide.createIcons();
+    }
+
+    function setPersonFilter(person) {
+      selectedPersonFilter = person;
+      renderGifts();
+    }
+
+    function cycleStatus(giftId) {
+      const gift = appData.gifts.find(g => g.id === giftId);
+      if (!gift) return;
+      const idx = STATUS_FLOW.indexOf(gift.status);
+      gift.status = STATUS_FLOW[(idx + 1) % STATUS_FLOW.length];
+      saveData();
+      renderGifts();
+      if (currentTab === 'budget') renderBudget();
+    }
+
+    // --- RENDU VUE BUDGET ---
+    function renderBudget() {
+      const container = document.getElementById('person-budgets-list');
+      const persons = getPersonsList();
+
+      let globalSpent = 0;
+      let globalPlanned = 0;
+
+      const itemsHTML = persons.map(p => {
+        const personGifts = appData.gifts.filter(g => g.who.trim().toLowerCase() === p.toLowerCase());
+        const spent = personGifts.reduce((sum, g) => sum + (parseFloat(g.price) || 0), 0);
+        const target = parseFloat(appData.budgets[p]) || 0;
+
+        globalSpent += spent;
+        globalPlanned += target;
+
+        const remaining = target - spent;
+        const isOver = target > 0 && spent > target;
+        const percent = target > 0 ? Math.min(100, Math.round((spent / target) * 100)) : 0;
+
+        return `
+          <div class="p-4 rounded-2xl glass border border-gray-200/60 dark:border-gray-800/60 shadow-sm space-y-2">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-bold text-sm text-gray-900 dark:text-white">${escapeHtml(p)}</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${personGifts.length} cadeau(x)</p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-bold ${isOver ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}">
+                  ${formatEuro(spent)} / ${target > 0 ? formatEuro(target) : 'Non défini'}
+                </span>
+                ${target > 0 ? `
+                  <p class="text-[10px] ${isOver ? 'text-red-500 font-semibold' : 'text-gray-400'}">
+                    ${isOver ? 'Dépassement : ' + formatEuro(spent - target) : 'Reste : ' + formatEuro(remaining)}
+                  </p>
+                ` : ''}
+              </div>
+            </div>
+
+            ${target > 0 ? `
+              <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                <div class="h-full transition-all ${isOver ? 'bg-red-500' : 'bg-emerald-600'}" style="width: ${percent}%"></div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = itemsHTML || `<p class="text-center text-xs text-gray-400 py-6">Ajoutez des cadeaux ou budgets par personne pour voir le récapitulatif.</p>`;
+
+      document.getElementById('total-spent').textContent = formatEuro(globalSpent);
+      document.getElementById('total-planned').textContent = formatEuro(globalPlanned);
+
+      const globalProgressBar = document.getElementById('global-progress-bar');
+      const globalBadge = document.getElementById('global-status-badge');
+
+      if (globalPlanned > 0) {
+        const globalPercent = Math.min(100, Math.round((globalSpent / globalPlanned) * 100));
+        globalProgressBar.style.width = `${globalPercent}%`;
+
+        if (globalSpent > globalPlanned) {
+          globalProgressBar.className = "bg-red-500 h-full transition-all duration-300";
+          globalBadge.className = "px-2 py-0.5 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400";
+          globalBadge.textContent = "Budget dépassé";
+        } else {
+          globalProgressBar.className = "bg-emerald-600 h-full transition-all duration-300";
+          globalBadge.className = "px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+          globalBadge.textContent = "Dans le budget";
+        }
+      } else {
+        globalProgressBar.style.width = "0%";
+      }
+    }
+
+    // --- GESTION DE LA MODALE CADEAU ---
+    function openGiftModal(id = null) {
+      const modal = document.getElementById('modal-gift');
+      const sheet = modal.querySelector('.sheet-transition');
+      const form = document.getElementById('gift-form');
+      const deleteBtn = document.getElementById('btn-delete-gift');
+      
+      updateDatalist();
+
+      if (id) {
+        const g = appData.gifts.find(x => x.id === id);
+        if (!g) return;
+        document.getElementById('modal-title').textContent = "Modifier le cadeau";
+        document.getElementById('gift-id').value = g.id;
+        document.getElementById('gift-name').value = g.name;
+        document.getElementById('gift-who').value = g.who;
+        document.getElementById('gift-price').value = g.price || '';
+        document.getElementById('gift-url').value = g.url || '';
+        document.getElementById('gift-status').value = g.status;
+        deleteBtn.classList.remove('hidden');
+      } else {
+        document.getElementById('modal-title').textContent = "Nouveau cadeau";
+        form.reset();
+        document.getElementById('gift-id').value = '';
+        deleteBtn.classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        sheet.classList.remove('translate-y-full');
+      }, 10);
+    }
+
+    function closeGiftModal() {
+      const modal = document.getElementById('modal-gift');
+      const sheet = modal.querySelector('.sheet-transition');
+      sheet.classList.add('translate-y-full');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 250);
+    }
+
+    function saveGift(e) {
+      e.preventDefault();
+      const id = document.getElementById('gift-id').value;
+      const name = document.getElementById('gift-name').value.trim();
+      const who = document.getElementById('gift-who').value.trim();
+      const price = parseFloat(document.getElementById('gift-price').value) || 0;
+      const url = document.getElementById('gift-url').value.trim();
+      const status = document.getElementById('gift-status').value;
+
+      if (!name || !who) return;
+
+      if (id) {
+        const gift = appData.gifts.find(g => g.id === id);
+        if (gift) {
+          gift.name = name;
+          gift.who = who;
+          gift.price = price;
+          gift.url = url;
+          gift.status = status;
+        }
+      } else {
+        appData.gifts.push({
+          id: Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
+          name,
+          who,
+          price,
+          url,
+          status
+        });
+      }
+
+      saveData();
+      closeGiftModal();
+      renderGifts();
+      if (currentTab === 'budget') renderBudget();
+    }
+
+    function deleteGiftFromModal() {
+      const id = document.getElementById('gift-id').value;
+      if (!id) return;
+      appData.gifts = appData.gifts.filter(g => g.id !== id);
+      saveData();
+      closeGiftModal();
+      renderGifts();
+      if (currentTab === 'budget') renderBudget();
+    }
+
+    // --- GESTION DE LA MODALE BUDGET ---
+    function openPersonBudgetModal() {
+      const modal = document.getElementById('modal-budget');
+      const sheet = modal.querySelector('.sheet-transition');
+      document.getElementById('budget-form').reset();
+      updateDatalist();
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        sheet.classList.remove('translate-y-full');
+      }, 10);
+    }
+
+    function closeBudgetModal() {
+      const modal = document.getElementById('modal-budget');
+      const sheet = modal.querySelector('.sheet-transition');
+      sheet.classList.add('translate-y-full');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 250);
+    }
+
+    function savePersonBudget(e) {
+      e.preventDefault();
+      const person = document.getElementById('budget-person-name').value.trim();
+      const amount = parseFloat(document.getElementById('budget-person-amount').value) || 0;
+
+      if (!person) return;
+
+      appData.budgets[person] = amount;
+      saveData();
+      closeBudgetModal();
+      renderBudget();
+    }
+
+    // --- IMPORT / EXPORT JSON ---
+    function exportData() {
+      const jsonStr = JSON.stringify(appData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mon-noel-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported && (Array.isArray(imported.gifts) || typeof imported.budgets === 'object')) {
+            appData = {
+              gifts: imported.gifts || [],
+              budgets: imported.budgets || {}
+            };
+            saveData();
+            renderGifts();
+            if (currentTab === 'budget') renderBudget();
+            alert("Restauration réussie !");
+          } else {
+            throw new Error("Format JSON invalide");
+          }
+        } catch (err) {
+          alert("Erreur lors de l'importation du fichier.");
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+
+    // --- UTILITAIRES ---
+    function formatEuro(val) {
+      return (Math.round((parseFloat(val) || 0) * 100) / 100).toLocaleString('fr-FR', {
+        style: 'currency',
+        currency: 'EUR'
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/'/g, "\\'");
+    }
+
+    // --- SERVICE WORKER INLINE (PWA Hors-ligne autonome sur GitHub Pages) ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          const CACHE_NAME = 'mon-noel-cache-v2';
+          self.addEventListener('install', (e) => {
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => {
+                return cache.addAll(['./', './icon.png']);
+              })
+            );
+            self.skipWaiting();
+          });
+
+          self.addEventListener('activate', (e) => {
+            e.waitUntil(self.clients.claim());
+          });
+
+          self.addEventListener('fetch', (e) => {
+            e.respondWith(
+              caches.match(e.request).then((res) => {
+                return res || fetch(e.request).then((response) => {
+                  return caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(e.request, response.clone());
+                    return response;
+                  });
+                });
+              }).catch(() => caches.match('./'))
+            );
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(err => console.log('SW reg error:', err));
+      });
+    }
+
+    // --- INITIALISATION AU CHARGEMENT ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      updateCountdown();
+      renderGifts();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
