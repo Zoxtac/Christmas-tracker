@@ -116,10 +116,10 @@
   </style>
 </head>
 
-<body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-full pb-32 pt- safe-area-inset">
+<body class="bg-[#f2f2f7] dark:bg-black text-gray-900 dark:text-gray-100 min-h-full pb-36">
 
-  <!-- Dynamic Island Header -->
-  <header class="sticky top-0 z-30 pt-2 pb-3 px-4 glass border-b border-gray-200/50 dark:border-gray-800/50">
+  <!-- Dynamic Island Header avec gestion sécurisée de l'encoche iOS -->
+  <header class="sticky top-0 z-30 pb-3 px-4 glass border-b border-gray-200/50 dark:border-gray-800/50" style="padding-top: max(0.75rem, env(safe-area-inset-top));">
     <div class="max-w-md mx-auto flex items-center justify-between">
       <div class="flex items-center gap-2">
         <div class="w-8 h-8 rounded-full bg-emerald-800 flex items-center justify-center text-white shadow-sm text-lg">
@@ -209,8 +209,8 @@
 
   </main>
 
-  <!-- Bouton Flottant d'Ajout (FAB iOS) -->
-  <div class="fixed bottom-6 left-0 right-0 z-20 flex justify-center pointer-events-none px-4">
+  <!-- Bouton Flottant d'Ajout (FAB iOS) avec respect de la barre de geste du bas -->
+  <div class="fixed left-0 right-0 z-20 flex justify-center pointer-events-none px-4" style="bottom: max(1.5rem, env(safe-area-inset-bottom));">
     <button onclick="openGiftModal()" class="pointer-events-auto bg-emerald-800 hover:bg-emerald-900 active:scale-95 text-white shadow-lg rounded-full px-5 py-3.5 flex items-center gap-2 font-semibold text-sm transition-all border border-amber-400/30">
       <i data-lucide="plus" class="w-5 h-5"></i>
       <span>Nouveau Cadeau</span>
@@ -219,7 +219,7 @@
 
   <!-- Modal Fiche Cadeau (iOS Sheet) -->
   <div id="modal-gift" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0">
+    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
       <div class="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4 sm:hidden"></div>
       
       <div class="flex justify-between items-center mb-4">
@@ -278,7 +278,7 @@
 
   <!-- Modal Définition Budget Personne -->
   <div id="modal-budget" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center hidden opacity-0 transition-opacity duration-200">
-    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0">
+    <div class="w-full max-w-md glass-modal rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl border border-gray-200/50 dark:border-gray-800/50 sheet-transition transform translate-y-full sm:translate-y-0" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-bold">Définir un budget</h3>
         <button onclick="closeBudgetModal()" class="p-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
